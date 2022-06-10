@@ -78,6 +78,7 @@ class PrivateConstants:
     STEPPER_GET_DISTANCE_TO_GO = 52
     STEPPER_GET_TARGET_POSITION = 53
     GET_FEATURES = 54
+    SERVO_WRITE_MICROSECONDS = 55
 
     # reports
     # debug data from Arduino

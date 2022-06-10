@@ -1066,6 +1066,27 @@ class Telemetrix(threading.Thread):
         command = [PrivateConstants.SERVO_WRITE, pin_number, angle]
         self._send_command(command)
 
+    def servo_write_microseconds(self, pin_number, microseconds):
+        """
+
+        Set a servo attached to a pin to a given pulse width in microseconds.
+
+        :param pin_number: pin
+
+        :param microseconds: pulse width (generally 544-2400 but
+            board-dependent?)
+
+        """
+        microseconds_bytes = (microseconds).to_bytes(2, byteorder="big")
+
+        command = [
+            PrivateConstants.SERVO_WRITE_MICROSECONDS,
+            pin_number,
+            microseconds_bytes[0],
+            microseconds_bytes[1]
+        ]
+        self._send_command(command)
+
     def servo_detach(self, pin_number):
         """
         Detach a servo for reuse
@@ -2281,6 +2302,9 @@ class Telemetrix(threading.Thread):
         # the length of the list is added at the head
         command.insert(0, len(command))
         send_message = bytes(command)
+
+        print(f"Sending message: {command}")
+        print(f"         binary: {send_message}")
 
         if self.serial_port:
             try:
