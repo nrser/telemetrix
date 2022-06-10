@@ -22,8 +22,10 @@ import time
 from collections import deque
 
 import serial
+
 # noinspection PyPackageRequirementscd
 from serial.serialutil import SerialException
+
 # noinspection PyPackageRequirements
 from serial.tools import list_ports
 
@@ -42,10 +44,16 @@ class Telemetrix(threading.Thread):
     """
 
     # noinspection PyPep8,PyPep8,PyPep8
-    def __init__(self, com_port=None, arduino_instance_id=1,
-                 arduino_wait=4, sleep_tune=0.000001,
-                 shutdown_on_exception=True,
-                 ip_address=None, ip_port=31335):
+    def __init__(
+        self,
+        com_port=None,
+        arduino_instance_id=1,
+        arduino_wait=4,
+        sleep_tune=0.000001,
+        shutdown_on_exception=True,
+        ip_address=None,
+        ip_port=31335,
+    ):
 
         """
 
@@ -84,9 +92,13 @@ class Telemetrix(threading.Thread):
         self.ip_port = ip_port
 
         if not self.ip_address:
-            self.the_data_receive_thread = threading.Thread(target=self._serial_receiver)
+            self.the_data_receive_thread = threading.Thread(
+                target=self._serial_receiver
+            )
         else:
-            self.the_data_receive_thread = threading.Thread(target=self._tcp_receiver)
+            self.the_data_receive_thread = threading.Thread(
+                target=self._tcp_receiver
+            )
 
         self.the_data_receive_thread.daemon = True
 
@@ -99,8 +111,10 @@ class Telemetrix(threading.Thread):
             if python_version[1] >= 7:
                 pass
             else:
-                raise RuntimeError("ERROR: Python 3.7 or greater is "
-                                   "required for use of this program.")
+                raise RuntimeError(
+                    "ERROR: Python 3.7 or greater is "
+                    "required for use of this program."
+                )
 
         # save input parameters as instance variables
         self.com_port = com_port
@@ -120,56 +134,86 @@ class Telemetrix(threading.Thread):
 
         # To add a command to the command dispatch table, append here.
         self.report_dispatch.update(
-            {PrivateConstants.LOOP_COMMAND: self._report_loop_data})
+            {PrivateConstants.LOOP_COMMAND: self._report_loop_data}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.DEBUG_PRINT: self._report_debug_data})
+            {PrivateConstants.DEBUG_PRINT: self._report_debug_data}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.DIGITAL_REPORT: self._digital_message})
+            {PrivateConstants.DIGITAL_REPORT: self._digital_message}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.ANALOG_REPORT: self._analog_message})
+            {PrivateConstants.ANALOG_REPORT: self._analog_message}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.FIRMWARE_REPORT: self._firmware_message})
-        self.report_dispatch.update({PrivateConstants.I_AM_HERE_REPORT: self._i_am_here})
+            {PrivateConstants.FIRMWARE_REPORT: self._firmware_message}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.SERVO_UNAVAILABLE: self._servo_unavailable})
+            {PrivateConstants.I_AM_HERE_REPORT: self._i_am_here}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.I2C_READ_REPORT: self._i2c_read_report})
+            {PrivateConstants.SERVO_UNAVAILABLE: self._servo_unavailable}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.I2C_TOO_FEW_BYTES_RCVD: self._i2c_too_few})
+            {PrivateConstants.I2C_READ_REPORT: self._i2c_read_report}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.I2C_TOO_MANY_BYTES_RCVD: self._i2c_too_many})
+            {PrivateConstants.I2C_TOO_FEW_BYTES_RCVD: self._i2c_too_few}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.SONAR_DISTANCE: self._sonar_distance_report})
-        self.report_dispatch.update({PrivateConstants.DHT_REPORT: self._dht_report})
+            {PrivateConstants.I2C_TOO_MANY_BYTES_RCVD: self._i2c_too_many}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.SPI_REPORT: self._spi_report})
+            {PrivateConstants.SONAR_DISTANCE: self._sonar_distance_report}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.ONE_WIRE_REPORT: self._onewire_report})
+            {PrivateConstants.DHT_REPORT: self._dht_report}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.STEPPER_DISTANCE_TO_GO:
-                 self._stepper_distance_to_go_report})
+            {PrivateConstants.SPI_REPORT: self._spi_report}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.STEPPER_TARGET_POSITION:
-                 self._stepper_target_position_report})
+            {PrivateConstants.ONE_WIRE_REPORT: self._onewire_report}
+        )
         self.report_dispatch.update(
-            {PrivateConstants.STEPPER_CURRENT_POSITION:
-                 self._stepper_current_position_report})
+            {
+                PrivateConstants.STEPPER_DISTANCE_TO_GO: self._stepper_distance_to_go_report
+            }
+        )
         self.report_dispatch.update(
-            {PrivateConstants.STEPPER_RUNNING_REPORT:
-                 self._stepper_is_running_report})
+            {
+                PrivateConstants.STEPPER_TARGET_POSITION: self._stepper_target_position_report
+            }
+        )
         self.report_dispatch.update(
-            {PrivateConstants.STEPPER_RUN_COMPLETE_REPORT:
-                 self._stepper_run_complete_report})
+            {
+                PrivateConstants.STEPPER_CURRENT_POSITION: self._stepper_current_position_report
+            }
+        )
+        self.report_dispatch.update(
+            {
+                PrivateConstants.STEPPER_RUNNING_REPORT: self._stepper_is_running_report
+            }
+        )
+        self.report_dispatch.update(
+            {
+                PrivateConstants.STEPPER_RUN_COMPLETE_REPORT: self._stepper_run_complete_report
+            }
+        )
 
         self.report_dispatch.update(
-            {PrivateConstants.STEPPER_DISTANCE_TO_GO:
-                 self._stepper_distance_to_go_report})
+            {
+                PrivateConstants.STEPPER_DISTANCE_TO_GO: self._stepper_distance_to_go_report
+            }
+        )
         self.report_dispatch.update(
-            {PrivateConstants.STEPPER_TARGET_POSITION:
-                 self._stepper_target_position_report})
+            {
+                PrivateConstants.STEPPER_TARGET_POSITION: self._stepper_target_position_report
+            }
+        )
         self.report_dispatch.update(
-            {PrivateConstants.FEATURES:
-                 self._features_report})
+            {PrivateConstants.FEATURES: self._features_report}
+        )
 
         # dictionaries to store the callbacks for each pin
         self.analog_callbacks = {}
@@ -246,14 +290,19 @@ class Telemetrix(threading.Thread):
         self.number_of_steppers = 0
 
         # dictionary to hold stepper motor information
-        self.stepper_info = {'instance': False, 'is_running': None,
-                             'maximum_speed': 1, 'speed': 0, 'acceleration': 0,
-                             'distance_to_go_callback': None,
-                             'target_position_callback': None,
-                             'current_position_callback': None,
-                             'is_running_callback': None,
-                             'motion_complete_callback': None,
-                             'acceleration_callback': None}
+        self.stepper_info = {
+            "instance": False,
+            "is_running": None,
+            "maximum_speed": 1,
+            "speed": 0,
+            "acceleration": 0,
+            "distance_to_go_callback": None,
+            "target_position_callback": None,
+            "current_position_callback": None,
+            "is_running_callback": None,
+            "motion_complete_callback": None,
+            "acceleration_callback": None,
+        }
 
         # build a list of stepper motor info items
         self.stepper_info_list = []
@@ -264,8 +313,10 @@ class Telemetrix(threading.Thread):
         self.the_reporter_thread.start()
         self.the_data_receive_thread.start()
 
-        print(f"Telemetrix:  Version {PrivateConstants.TELEMETRIX_VERSION}\n\n"
-              f"Copyright (c) 2021 Alan Yorinks All Rights Reserved.\n")
+        print(
+            f"Telemetrix:  Version {PrivateConstants.TELEMETRIX_VERSION}\n\n"
+            f"Copyright (c) 2021 Alan Yorinks All Rights Reserved.\n"
+        )
 
         # using the serial link
         if not self.ip_address:
@@ -286,7 +337,8 @@ class Telemetrix(threading.Thread):
 
             if self.serial_port:
                 print(
-                    f"Arduino compatible device found and connected to {self.serial_port.port}")
+                    f"Arduino compatible device found and connected to {self.serial_port.port}"
+                )
 
                 self.serial_port.reset_input_buffer()
                 self.serial_port.reset_output_buffer()
@@ -295,37 +347,43 @@ class Telemetrix(threading.Thread):
             else:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError('No Arduino Found or User Aborted Program')
+                raise RuntimeError("No Arduino Found or User Aborted Program")
         else:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((self.ip_address, self.ip_port))
-            print(f'Successfully connected to: {self.ip_address}:{self.ip_port}')
+            print(
+                f"Successfully connected to: {self.ip_address}:{self.ip_port}"
+            )
 
         # allow the threads to run
         self._run_threads()
-        print(f'Waiting for Arduino to reset')
-        print(f'Reset Complete')
+        print(f"Waiting for Arduino to reset")
+        print(f"Reset Complete")
 
         # get telemetrix firmware version and print it
-        print('\nRetrieving Telemetrix4Arduino firmware ID...')
+        print("\nRetrieving Telemetrix4Arduino firmware ID...")
         self._get_firmware_version()
         if not self.firmware_version:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'Telemetrix4Arduino firmware version')
+            raise RuntimeError(f"Telemetrix4Arduino firmware version")
 
         else:
             if self.firmware_version[0] < 5:
-                raise RuntimeError('Please upgrade the server firmware to version 5.0.0 or greater')
-            print(f'Telemetrix4Arduino firmware version: {self.firmware_version[0]}.'
-                  f'{self.firmware_version[1]}.{self.firmware_version[2]}')
+                raise RuntimeError(
+                    "Please upgrade the server firmware to version 5.0.0 or greater"
+                )
+            print(
+                f"Telemetrix4Arduino firmware version: {self.firmware_version[0]}."
+                f"{self.firmware_version[1]}.{self.firmware_version[2]}"
+            )
         command = [PrivateConstants.ENABLE_ALL_REPORTS]
         self._send_command(command)
 
         # get the features list
         command = [PrivateConstants.GET_FEATURES]
         self._send_command(command)
-        time.sleep(.2)
+        time.sleep(0.2)
 
         # Have the server reset its data structures
         command = [PrivateConstants.RESET]
@@ -343,27 +401,29 @@ class Telemetrix(threading.Thread):
         # a list of serial ports to be checked
         serial_ports = []
 
-        print('Opening all potential serial ports...')
+        print("Opening all potential serial ports...")
         the_ports_list = list_ports.comports()
         for port in the_ports_list:
             if port.pid is None:
                 continue
             try:
-                self.serial_port = serial.Serial(port.device, 115200,
-                                                 timeout=1, writeTimeout=0)
+                self.serial_port = serial.Serial(
+                    port.device, 115200, timeout=1, writeTimeout=0
+                )
             except SerialException:
                 continue
             # create a list of serial ports that we opened
             serial_ports.append(self.serial_port)
 
             # display to the user
-            print('\t' + port.device)
+            print("\t" + port.device)
 
             # clear out any possible data in the input buffer
         # wait for arduino to reset
         print(
-            f'\nWaiting {self.arduino_wait} seconds(arduino_wait) for Arduino devices to '
-            'reset...')
+            f"\nWaiting {self.arduino_wait} seconds(arduino_wait) for Arduino devices to "
+            "reset..."
+        )
         # temporary for testing
         time.sleep(self.arduino_wait)
         self._run_threads()
@@ -375,13 +435,13 @@ class Telemetrix(threading.Thread):
             if self.reported_arduino_id != self.arduino_instance_id:
                 continue
             else:
-                print('Valid Arduino ID Found.')
+                print("Valid Arduino ID Found.")
                 self.serial_port.reset_input_buffer()
                 self.serial_port.reset_output_buffer()
                 return
         if self.shutdown_on_exception:
             self.shutdown()
-        raise RuntimeError(f'Incorrect Arduino ID: {self.reported_arduino_id}')
+        raise RuntimeError(f"Incorrect Arduino ID: {self.reported_arduino_id}")
 
     def _manual_open(self):
         """
@@ -390,13 +450,15 @@ class Telemetrix(threading.Thread):
         """
         # if port is not found, a serial exception will be thrown
         try:
-            print(f'Opening {self.com_port}...')
-            self.serial_port = serial.Serial(self.com_port, 115200,
-                                             timeout=1, writeTimeout=0)
+            print(f"Opening {self.com_port}...")
+            self.serial_port = serial.Serial(
+                self.com_port, 115200, timeout=1, writeTimeout=0
+            )
 
             print(
-                f'\nWaiting {self.arduino_wait} seconds(arduino_wait) for Arduino devices to '
-                'reset...')
+                f"\nWaiting {self.arduino_wait} seconds(arduino_wait) for Arduino devices to "
+                "reset..."
+            )
             self._run_threads()
             time.sleep(self.arduino_wait)
 
@@ -405,25 +467,30 @@ class Telemetrix(threading.Thread):
             if self.reported_arduino_id != self.arduino_instance_id:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError(f'Incorrect Arduino ID: {self.reported_arduino_id}')
-            print('Valid Arduino ID Found.')
+                raise RuntimeError(
+                    f"Incorrect Arduino ID: {self.reported_arduino_id}"
+                )
+            print("Valid Arduino ID Found.")
             # get arduino firmware version and print it
-            print('\nRetrieving Telemetrix4Arduino firmware ID...')
+            print("\nRetrieving Telemetrix4Arduino firmware ID...")
             self._get_firmware_version()
 
             if not self.firmware_version:
                 if self.shutdown_on_exception:
                     self.shutdown()
                 raise RuntimeError(
-                    f'Telemetrix4Arduino Sketch Firmware Version Not Found')
+                    f"Telemetrix4Arduino Sketch Firmware Version Not Found"
+                )
 
             else:
-                print(f'Telemetrix4Arduino firmware version: {self.firmware_version[0]}.'
-                      f'{self.firmware_version[1]}')
+                print(
+                    f"Telemetrix4Arduino firmware version: {self.firmware_version[0]}."
+                    f"{self.firmware_version[1]}"
+                )
         except KeyboardInterrupt:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('User Hit Control-C')
+            raise RuntimeError("User Hit Control-C")
 
     def analog_write(self, pin, value):
         """
@@ -435,7 +502,7 @@ class Telemetrix(threading.Thread):
 
         """
         value_msb = value >> 8
-        value_lsb = value & 0xff
+        value_lsb = value & 0xFF
         command = [PrivateConstants.ANALOG_WRITE, pin, value_msb, value_lsb]
         self._send_command(command)
 
@@ -456,8 +523,11 @@ class Telemetrix(threading.Thread):
         """
         Disable reporting for all digital and analog input pins
         """
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_DISABLE_ALL, 0]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_DISABLE_ALL,
+            0,
+        ]
         self._send_command(command)
 
     def disable_analog_reporting(self, pin):
@@ -467,8 +537,11 @@ class Telemetrix(threading.Thread):
         :param pin: Analog pin number. For example for A0, the number is 0.
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_ANALOG_DISABLE, pin]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_ANALOG_DISABLE,
+            pin,
+        ]
         self._send_command(command)
 
     def disable_digital_reporting(self, pin):
@@ -478,8 +551,11 @@ class Telemetrix(threading.Thread):
         :param pin: Pin number.
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_DIGITAL_DISABLE, pin]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_DIGITAL_DISABLE,
+            pin,
+        ]
         self._send_command(command)
 
     def enable_analog_reporting(self, pin):
@@ -490,8 +566,11 @@ class Telemetrix(threading.Thread):
 
 
         """
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_ANALOG_ENABLE, pin]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_ANALOG_ENABLE,
+            pin,
+        ]
         self._send_command(command)
 
     def enable_digital_reporting(self, pin):
@@ -501,8 +580,11 @@ class Telemetrix(threading.Thread):
         :param pin: Pin number.
         """
 
-        command = [PrivateConstants.MODIFY_REPORTING,
-                   PrivateConstants.REPORTING_DIGITAL_ENABLE, pin]
+        command = [
+            PrivateConstants.MODIFY_REPORTING,
+            PrivateConstants.REPORTING_DIGITAL_ENABLE,
+            pin,
+        ]
         self._send_command(command)
 
     def _get_arduino_id(self):
@@ -513,7 +595,7 @@ class Telemetrix(threading.Thread):
         command = [PrivateConstants.ARE_U_THERE]
         self._send_command(command)
         # provide time for the reply
-        time.sleep(.5)
+        time.sleep(0.5)
 
     def _get_firmware_version(self):
         """
@@ -524,104 +606,132 @@ class Telemetrix(threading.Thread):
         command = [PrivateConstants.GET_FIRMWARE_VERSION]
         self._send_command(command)
         # provide time for the reply
-        time.sleep(.5)
+        time.sleep(0.5)
 
-    def i2c_read(self, address, register, number_of_bytes,
-                 callback=None, i2c_port=0,
-                 write_register=True):
+    def i2c_read(
+        self,
+        address,
+        register,
+        number_of_bytes,
+        callback=None,
+        i2c_port=0,
+        write_register=True,
+    ):
         """
-        Read the specified number of bytes from the
-        specified register for the i2c device.
+         Read the specified number of bytes from the
+         specified register for the i2c device.
 
 
-        :param address: i2c device address
+         :param address: i2c device address
 
-        :param register: i2c register (or None if no register
-                                       selection is needed)
+         :param register: i2c register (or None if no register
+                                        selection is needed)
 
-        :param number_of_bytes: number of bytes to be read
+         :param number_of_bytes: number of bytes to be read
 
-        :param callback: Required callback function to report
-                         i2c data as a result of read command
+         :param callback: Required callback function to report
+                          i2c data as a result of read command
 
-       :param i2c_port: 0 = default, 1 = secondary
+        :param i2c_port: 0 = default, 1 = secondary
 
-       :param write_register: If True, the register is written
-                                       before read
-                              Else, the write is suppressed
-
-
-        callback returns a data list:
-
-        [I2C_READ_REPORT, address, register, count of data bytes,
-         data bytes, time-stamp]
-
-        """
-
-        self._i2c_read_request(address, register, number_of_bytes,
-                               callback=callback, i2c_port=i2c_port,
-                               write_register=write_register)
-
-    def i2c_read_restart_transmission(self, address, register,
-                                      number_of_bytes,
-                                      callback=None, i2c_port=0,
-                                      write_register=True):
-        """
-        Read the specified number of bytes from the specified
-        register for the i2c device. This restarts the transmission
-        after the read. It is required for some i2c devices such as the MMA8452Q
-        accelerometer.
+        :param write_register: If True, the register is written
+                                        before read
+                               Else, the write is suppressed
 
 
-        :param address: i2c device address
+         callback returns a data list:
 
-        :param register: i2c register (or None if no register
-                                                    selection is needed)
-
-        :param number_of_bytes: number of bytes to be read
-
-        :param callback: Required callback function to report i2c
-                         data as a result of read command
-
-       :param i2c_port: 0 = default 1 = secondary
-
-       :param write_register: If True, the register is written before read
-                              Else, the write is suppressed
-
-
-
-        callback returns a data list:
-
-        [I2C_READ_REPORT, address, register, count of data bytes,
-         data bytes, time-stamp]
+         [I2C_READ_REPORT, address, register, count of data bytes,
+          data bytes, time-stamp]
 
         """
 
-        self._i2c_read_request(address, register, number_of_bytes,
-                               stop_transmission=False,
-                               callback=callback, i2c_port=i2c_port,
-                               write_register=write_register)
+        self._i2c_read_request(
+            address,
+            register,
+            number_of_bytes,
+            callback=callback,
+            i2c_port=i2c_port,
+            write_register=write_register,
+        )
 
-    def _i2c_read_request(self, address, register, number_of_bytes,
-                          stop_transmission=True, callback=None, i2c_port=0,
-                          write_register=True):
+    def i2c_read_restart_transmission(
+        self,
+        address,
+        register,
+        number_of_bytes,
+        callback=None,
+        i2c_port=0,
+        write_register=True,
+    ):
         """
-        This method requests the read of an i2c device. Results are retrieved
-        via callback.
+         Read the specified number of bytes from the specified
+         register for the i2c device. This restarts the transmission
+         after the read. It is required for some i2c devices such as the MMA8452Q
+         accelerometer.
 
-        :param address: i2c device address
 
-        :param register: register number (or None if no register selection is needed)
+         :param address: i2c device address
 
-        :param number_of_bytes: number of bytes expected to be returned
+         :param register: i2c register (or None if no register
+                                                     selection is needed)
 
-        :param stop_transmission: stop transmission after read
+         :param number_of_bytes: number of bytes to be read
 
-        :param callback: Required callback function to report i2c data as a
-                   result of read command.
+         :param callback: Required callback function to report i2c
+                          data as a result of read command
 
-       :param write_register: If True, the register is written before read
-                              Else, the write is suppressed
+        :param i2c_port: 0 = default 1 = secondary
+
+        :param write_register: If True, the register is written before read
+                               Else, the write is suppressed
+
+
+
+         callback returns a data list:
+
+         [I2C_READ_REPORT, address, register, count of data bytes,
+          data bytes, time-stamp]
+
+        """
+
+        self._i2c_read_request(
+            address,
+            register,
+            number_of_bytes,
+            stop_transmission=False,
+            callback=callback,
+            i2c_port=i2c_port,
+            write_register=write_register,
+        )
+
+    def _i2c_read_request(
+        self,
+        address,
+        register,
+        number_of_bytes,
+        stop_transmission=True,
+        callback=None,
+        i2c_port=0,
+        write_register=True,
+    ):
+        """
+         This method requests the read of an i2c device. Results are retrieved
+         via callback.
+
+         :param address: i2c device address
+
+         :param register: register number (or None if no register selection is needed)
+
+         :param number_of_bytes: number of bytes expected to be returned
+
+         :param stop_transmission: stop transmission after read
+
+         :param callback: Required callback function to report i2c data as a
+                    result of read command.
+
+        :param write_register: If True, the register is written before read
+                               Else, the write is suppressed
 
         """
         if not i2c_port:
@@ -629,19 +739,23 @@ class Telemetrix(threading.Thread):
                 if self.shutdown_on_exception:
                     self.shutdown()
                 raise RuntimeError(
-                    'I2C Read: set_pin_mode i2c never called for i2c port 1.')
+                    "I2C Read: set_pin_mode i2c never called for i2c port 1."
+                )
 
         if i2c_port:
             if not self.i2c_2_active:
                 if self.shutdown_on_exception:
                     self.shutdown()
                 raise RuntimeError(
-                    'I2C Read: set_pin_mode i2c never called for i2c port 2.')
+                    "I2C Read: set_pin_mode i2c never called for i2c port 2."
+                )
 
         if not callback:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('I2C Read: A callback function must be specified.')
+            raise RuntimeError(
+                "I2C Read: A callback function must be specified."
+            )
 
         if not i2c_port:
             self.i2c_callback = callback
@@ -664,8 +778,15 @@ class Telemetrix(threading.Thread):
         # 5. i2c port
         # 6. suppress write flag
 
-        command = [PrivateConstants.I2C_READ, address, register, number_of_bytes,
-                   stop_transmission, i2c_port, write_register]
+        command = [
+            PrivateConstants.I2C_READ,
+            address,
+            register,
+            number_of_bytes,
+            stop_transmission,
+            i2c_port,
+            write_register,
+        ]
         self._send_command(command)
 
     def i2c_write(self, address, args, i2c_port=0):
@@ -685,14 +806,16 @@ class Telemetrix(threading.Thread):
                 if self.shutdown_on_exception:
                     self.shutdown()
                 raise RuntimeError(
-                    'I2C Write: set_pin_mode i2c never called for i2c port 1.')
+                    "I2C Write: set_pin_mode i2c never called for i2c port 1."
+                )
 
         if i2c_port:
             if not self.i2c_2_active:
                 if self.shutdown_on_exception:
                     self.shutdown()
                 raise RuntimeError(
-                    'I2C Write: set_pin_mode i2c never called for i2c port 2.')
+                    "I2C Write: set_pin_mode i2c never called for i2c port 2."
+                )
 
         command = [PrivateConstants.I2C_WRITE, len(args), address, i2c_port]
 
@@ -729,7 +852,7 @@ class Telemetrix(threading.Thread):
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('Analog interval must be between 0 and 255')
+            raise RuntimeError("Analog interval must be between 0 and 255")
 
     def set_pin_mode_analog_output(self, pin_number):
         """
@@ -740,7 +863,9 @@ class Telemetrix(threading.Thread):
         """
         self._set_pin_mode(pin_number, PrivateConstants.AT_OUTPUT)
 
-    def set_pin_mode_analog_input(self, pin_number, differential=0, callback=None):
+    def set_pin_mode_analog_input(
+        self, pin_number, differential=0, callback=None
+    ):
         """
         Set a pin as an analog input.
 
@@ -759,8 +884,9 @@ class Telemetrix(threading.Thread):
         The pin_type for analog input pins = 2
 
         """
-        self._set_pin_mode(pin_number, PrivateConstants.AT_ANALOG, differential,
-                           callback)
+        self._set_pin_mode(
+            pin_number, PrivateConstants.AT_ANALOG, differential, callback
+        )
 
     def set_pin_mode_digital_input(self, pin_number, callback=None):
         """
@@ -778,7 +904,9 @@ class Telemetrix(threading.Thread):
         The pin_type for digital input pins = 0
 
         """
-        self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT, callback=callback)
+        self._set_pin_mode(
+            pin_number, PrivateConstants.AT_INPUT, callback=callback
+        )
 
     def set_pin_mode_digital_input_pullup(self, pin_number, callback=None):
         """
@@ -796,8 +924,9 @@ class Telemetrix(threading.Thread):
         The pin_type for digital input pins with pullups enabled = 11
 
         """
-        self._set_pin_mode(pin_number, PrivateConstants.AT_INPUT_PULLUP,
-                           callback=callback)
+        self._set_pin_mode(
+            pin_number, PrivateConstants.AT_INPUT_PULLUP, callback=callback
+        )
 
     def set_pin_mode_digital_output(self, pin_number):
         """
@@ -859,7 +988,9 @@ class Telemetrix(threading.Thread):
             if not callback:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError('set_pin_mode_dht: A Callback must be specified')
+                raise RuntimeError(
+                    "set_pin_mode_dht: A Callback must be specified"
+                )
 
             if self.dht_count < PrivateConstants.MAX_DHTS - 1:
                 self.dht_callbacks[pin] = callback
@@ -874,11 +1005,12 @@ class Telemetrix(threading.Thread):
                 if self.shutdown_on_exception:
                     self.shutdown()
                 raise RuntimeError(
-                    f'Maximum Number Of DHTs Exceeded - set_pin_mode_dht fails for pin {pin}')
+                    f"Maximum Number Of DHTs Exceeded - set_pin_mode_dht fails for pin {pin}"
+                )
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'The DHT feature is disabled in the server.')
+            raise RuntimeError(f"The DHT feature is disabled in the server.")
 
     # noinspection PyRedundantParentheses
     def set_pin_mode_servo(self, pin_number, min_pulse=544, max_pulse=2400):
@@ -898,16 +1030,21 @@ class Telemetrix(threading.Thread):
             minv = (min_pulse).to_bytes(2, byteorder="big")
             maxv = (max_pulse).to_bytes(2, byteorder="big")
 
-            command = [PrivateConstants.SERVO_ATTACH, pin_number,
-                       minv[0], minv[1], maxv[0], maxv[1]]
+            command = [
+                PrivateConstants.SERVO_ATTACH,
+                pin_number,
+                minv[0],
+                minv[1],
+                maxv[0],
+                maxv[1],
+            ]
             self._send_command(command)
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'The SERVO feature is disabled in the server.')
+            raise RuntimeError(f"The SERVO feature is disabled in the server.")
 
-    def set_pin_mode_sonar(self, trigger_pin, echo_pin,
-                           callback=None):
+    def set_pin_mode_sonar(self, trigger_pin, echo_pin, callback=None):
         """
 
         :param trigger_pin:
@@ -924,7 +1061,9 @@ class Telemetrix(threading.Thread):
             if not callback:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError('set_pin_mode_sonar: A Callback must be specified')
+                raise RuntimeError(
+                    "set_pin_mode_sonar: A Callback must be specified"
+                )
 
             if self.sonar_count < PrivateConstants.MAX_SONARS - 1:
                 self.sonar_callbacks[trigger_pin] = callback
@@ -936,11 +1075,12 @@ class Telemetrix(threading.Thread):
                 if self.shutdown_on_exception:
                     self.shutdown()
                 raise RuntimeError(
-                    f'Maximum Number Of Sonars Exceeded - set_pin_mode_sonar fails for pin {trigger_pin}')
+                    f"Maximum Number Of Sonars Exceeded - set_pin_mode_sonar fails for pin {trigger_pin}"
+                )
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'The SONAR feature is disabled in the server.')
+            raise RuntimeError(f"The SONAR feature is disabled in the server.")
 
     def set_pin_mode_spi(self, chip_select_list=None):
         """
@@ -963,11 +1103,13 @@ class Telemetrix(threading.Thread):
             if type(chip_select_list) != list:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError('chip_select_list must be in the form of a list')
+                raise RuntimeError(
+                    "chip_select_list must be in the form of a list"
+                )
             if not chip_select_list:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError('Chip select pins were not specified')
+                raise RuntimeError("Chip select pins were not specified")
 
             self.spi_enabled = True
 
@@ -980,10 +1122,11 @@ class Telemetrix(threading.Thread):
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'The SPI feature is disabled in the server.')
+            raise RuntimeError(f"The SPI feature is disabled in the server.")
 
-    def set_pin_mode_stepper(self, interface=1, pin1=2, pin2=3, pin3=4,
-                             pin4=5, enable=True):
+    def set_pin_mode_stepper(
+        self, interface=1, pin1=2, pin2=3, pin3=4, pin4=5, enable=True
+    ):
         """
         Stepper motor support is implemented as a proxy for the
         the AccelStepper library for the Arduino.
@@ -1028,22 +1171,32 @@ class Telemetrix(threading.Thread):
             if self.number_of_steppers == self.max_number_of_steppers:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError('Maximum number of steppers has already been assigned')
+                raise RuntimeError(
+                    "Maximum number of steppers has already been assigned"
+                )
 
             if interface not in self.valid_stepper_interfaces:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError('Invalid stepper interface')
+                raise RuntimeError("Invalid stepper interface")
 
             self.number_of_steppers += 1
 
             motor_id = self.next_stepper_assigned
             self.next_stepper_assigned += 1
-            self.stepper_info_list[motor_id]['instance'] = True
+            self.stepper_info_list[motor_id]["instance"] = True
 
             # build message and send message to server
-            command = [PrivateConstants.SET_PIN_MODE_STEPPER, motor_id, interface, pin1,
-                       pin2, pin3, pin4, enable]
+            command = [
+                PrivateConstants.SET_PIN_MODE_STEPPER,
+                motor_id,
+                interface,
+                pin1,
+                pin2,
+                pin3,
+                pin4,
+                enable,
+            ]
             self._send_command(command)
 
             # return motor id
@@ -1051,7 +1204,9 @@ class Telemetrix(threading.Thread):
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'The Stepper feature is disabled in the server.')
+            raise RuntimeError(
+                f"The Stepper feature is disabled in the server."
+            )
 
     def servo_write(self, pin_number, angle):
         """
@@ -1083,7 +1238,7 @@ class Telemetrix(threading.Thread):
             PrivateConstants.SERVO_WRITE_MICROSECONDS,
             pin_number,
             microseconds_bytes[0],
-            microseconds_bytes[1]
+            microseconds_bytes[1],
         ]
         self._send_command(command)
 
@@ -1118,12 +1273,12 @@ class Telemetrix(threading.Thread):
         else:
             polarity = 0
         position = abs(position)
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_move_to: Invalid motor_id.')
+            raise RuntimeError("stepper_move_to: Invalid motor_id.")
 
-        position_bytes = list(position.to_bytes(4, 'big', signed=True))
+        position_bytes = list(position.to_bytes(4, "big", signed=True))
 
         command = [PrivateConstants.STEPPER_MOVE_TO, motor_id]
         for value in position_bytes:
@@ -1147,12 +1302,12 @@ class Telemetrix(threading.Thread):
             polarity = 0
 
         relative_position = abs(relative_position)
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_move: Invalid motor_id.')
+            raise RuntimeError("stepper_move: Invalid motor_id.")
 
-        position_bytes = list(relative_position.to_bytes(4, 'big', signed=True))
+        position_bytes = list(relative_position.to_bytes(4, "big", signed=True))
 
         command = [PrivateConstants.STEPPER_MOVE, motor_id]
         for value in position_bytes:
@@ -1180,15 +1335,18 @@ class Telemetrix(threading.Thread):
         if not completion_callback:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_run: A motion complete callback must be '
-                               'specified.')
+            raise RuntimeError(
+                "stepper_run: A motion complete callback must be " "specified."
+            )
 
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_run: Invalid motor_id.')
+            raise RuntimeError("stepper_run: Invalid motor_id.")
 
-        self.stepper_info_list[motor_id]['motion_complete_callback'] = completion_callback
+        self.stepper_info_list[motor_id][
+            "motion_complete_callback"
+        ] = completion_callback
         command = [PrivateConstants.STEPPER_RUN, motor_id]
         self._send_command(command)
 
@@ -1202,10 +1360,10 @@ class Telemetrix(threading.Thread):
         :param motor_id: 0 - 3
 
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_run_speed: Invalid motor_id.')
+            raise RuntimeError("stepper_run_speed: Invalid motor_id.")
 
         command = [PrivateConstants.STEPPER_RUN_SPEED, motor_id]
         self._send_command(command)
@@ -1226,22 +1384,28 @@ class Telemetrix(threading.Thread):
         :param max_speed: 1 - 1000
         """
 
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_max_speed: Invalid motor_id.')
+            raise RuntimeError("stepper_set_max_speed: Invalid motor_id.")
 
         if not 1 < max_speed <= 1000:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_max_speed: Speed range is 1 - 1000.')
+            raise RuntimeError(
+                "stepper_set_max_speed: Speed range is 1 - 1000."
+            )
 
-        self.stepper_info_list[motor_id]['max_speed'] = max_speed
-        max_speed_msb = (max_speed & 0xff00) >> 8
-        max_speed_lsb = max_speed & 0xff
+        self.stepper_info_list[motor_id]["max_speed"] = max_speed
+        max_speed_msb = (max_speed & 0xFF00) >> 8
+        max_speed_lsb = max_speed & 0xFF
 
-        command = [PrivateConstants.STEPPER_SET_MAX_SPEED, motor_id, max_speed_msb,
-                   max_speed_lsb]
+        command = [
+            PrivateConstants.STEPPER_SET_MAX_SPEED,
+            motor_id,
+            max_speed_msb,
+            max_speed_lsb,
+        ]
         self._send_command(command)
 
     def stepper_get_max_speed(self, motor_id):
@@ -1255,12 +1419,12 @@ class Telemetrix(threading.Thread):
 
         :return: The currently configured maximum speed.
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_max_speed: Invalid motor_id.')
+            raise RuntimeError("stepper_max_speed: Invalid motor_id.")
 
-        return self.stepper_info_list[motor_id]['max_speed']
+        return self.stepper_info_list[motor_id]["max_speed"]
 
     def stepper_set_acceleration(self, motor_id, acceleration):
         """
@@ -1275,24 +1439,29 @@ class Telemetrix(threading.Thread):
                              Dont call more often than needed.
 
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_acceleration: Invalid motor_id.')
+            raise RuntimeError("stepper_set_acceleration: Invalid motor_id.")
 
         if not 1 < acceleration <= 1000:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_acceleration: Acceleration range is 1 - '
-                               '1000.')
+            raise RuntimeError(
+                "stepper_set_acceleration: Acceleration range is 1 - " "1000."
+            )
 
-        self.stepper_info_list[motor_id]['acceleration'] = acceleration
+        self.stepper_info_list[motor_id]["acceleration"] = acceleration
 
         max_accel_msb = acceleration >> 8
-        max_accel_lsb = acceleration & 0xff
+        max_accel_lsb = acceleration & 0xFF
 
-        command = [PrivateConstants.STEPPER_SET_ACCELERATION, motor_id, max_accel_msb,
-                   max_accel_lsb]
+        command = [
+            PrivateConstants.STEPPER_SET_ACCELERATION,
+            motor_id,
+            max_accel_msb,
+            max_accel_lsb,
+        ]
         self._send_command(command)
 
     def stepper_set_speed(self, motor_id, speed):
@@ -1309,23 +1478,27 @@ class Telemetrix(threading.Thread):
                       The speed will be limited by the current value of
                       stepper_set_max_speed().
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_speed: Invalid motor_id.')
+            raise RuntimeError("stepper_set_speed: Invalid motor_id.")
 
         if not 0 < speed <= 1000:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_speed: Speed range is 0 - '
-                               '1000.')
+            raise RuntimeError("stepper_set_speed: Speed range is 0 - " "1000.")
 
-        self.stepper_info_list[motor_id]['speed'] = speed
+        self.stepper_info_list[motor_id]["speed"] = speed
 
         speed_msb = speed >> 8
-        speed_lsb = speed & 0xff
+        speed_lsb = speed & 0xFF
 
-        command = [PrivateConstants.STEPPER_SET_SPEED, motor_id, speed_msb, speed_lsb]
+        command = [
+            PrivateConstants.STEPPER_SET_SPEED,
+            motor_id,
+            speed_msb,
+            speed_lsb,
+        ]
         self._send_command(command)
 
     def stepper_get_speed(self, motor_id):
@@ -1338,12 +1511,12 @@ class Telemetrix(threading.Thread):
         :param motor_id:  0 - 3
 
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_get_speed: Invalid motor_id.')
+            raise RuntimeError("stepper_get_speed: Invalid motor_id.")
 
-        return self.stepper_info_list[motor_id]['speed']
+        return self.stepper_info_list[motor_id]["speed"]
 
     def stepper_get_distance_to_go(self, motor_id, distance_to_go_callback):
         """
@@ -1364,14 +1537,17 @@ class Telemetrix(threading.Thread):
         if not distance_to_go_callback:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_get_distance_to_go Read: A callback function must be specified.')
+            raise RuntimeError(
+                "stepper_get_distance_to_go Read: A callback function must be specified."
+            )
 
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_get_distance_to_go: Invalid motor_id.')
+            raise RuntimeError("stepper_get_distance_to_go: Invalid motor_id.")
         self.stepper_info_list[motor_id][
-            'distance_to_go_callback'] = distance_to_go_callback
+            "distance_to_go_callback"
+        ] = distance_to_go_callback
         command = [PrivateConstants.STEPPER_GET_DISTANCE_TO_GO, motor_id]
         self._send_command(command)
 
@@ -1394,15 +1570,17 @@ class Telemetrix(threading.Thread):
             if self.shutdown_on_exception:
                 self.shutdown()
             raise RuntimeError(
-                'stepper_get_target_position Read: A callback function must be specified.')
+                "stepper_get_target_position Read: A callback function must be specified."
+            )
 
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_get_target_position: Invalid motor_id.')
+            raise RuntimeError("stepper_get_target_position: Invalid motor_id.")
 
         self.stepper_info_list[motor_id][
-            'target_position_callback'] = target_callback
+            "target_position_callback"
+        ] = target_callback
 
         command = [PrivateConstants.STEPPER_GET_TARGET_POSITION, motor_id]
         self._send_command(command)
@@ -1425,14 +1603,19 @@ class Telemetrix(threading.Thread):
             if self.shutdown_on_exception:
                 self.shutdown()
             raise RuntimeError(
-                'stepper_get_current_position Read: A callback function must be specified.')
+                "stepper_get_current_position Read: A callback function must be specified."
+            )
 
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_get_current_position: Invalid motor_id.')
+            raise RuntimeError(
+                "stepper_get_current_position: Invalid motor_id."
+            )
 
-        self.stepper_info_list[motor_id]['current_position_callback'] = current_position_callback
+        self.stepper_info_list[motor_id][
+            "current_position_callback"
+        ] = current_position_callback
 
         command = [PrivateConstants.STEPPER_GET_CURRENT_POSITION, motor_id]
         self._send_command(command)
@@ -1451,11 +1634,13 @@ class Telemetrix(threading.Thread):
         :param position: Position in steps. This is a 32 bit value
         """
 
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_current_position: Invalid motor_id.')
-        position_bytes = list(position.to_bytes(4, 'big',  signed=True))
+            raise RuntimeError(
+                "stepper_set_current_position: Invalid motor_id."
+            )
+        position_bytes = list(position.to_bytes(4, "big", signed=True))
 
         command = [PrivateConstants.STEPPER_SET_CURRENT_POSITION, motor_id]
         for value in position_bytes:
@@ -1483,15 +1668,21 @@ class Telemetrix(threading.Thread):
         if not completion_callback:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_run_speed_to_position: A motion complete '
-                               'callback must be '
-                               'specified.')
-        if not self.stepper_info_list[motor_id]['instance']:
+            raise RuntimeError(
+                "stepper_run_speed_to_position: A motion complete "
+                "callback must be "
+                "specified."
+            )
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_run_speed_to_position: Invalid motor_id.')
+            raise RuntimeError(
+                "stepper_run_speed_to_position: Invalid motor_id."
+            )
 
-        self.stepper_info_list[motor_id]['motion_complete_callback'] = completion_callback
+        self.stepper_info_list[motor_id][
+            "motion_complete_callback"
+        ] = completion_callback
         command = [PrivateConstants.STEPPER_RUN_SPEED_TO_POSITION, motor_id]
         self._send_command(command)
 
@@ -1503,10 +1694,10 @@ class Telemetrix(threading.Thread):
 
         :param motor_id:  0 - 3
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_stop: Invalid motor_id.')
+            raise RuntimeError("stepper_stop: Invalid motor_id.")
 
         command = [PrivateConstants.STEPPER_STOP, motor_id]
         self._send_command(command)
@@ -1527,10 +1718,10 @@ class Telemetrix(threading.Thread):
 
         :param motor_id: 0 - 3
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_disable_outputs: Invalid motor_id.')
+            raise RuntimeError("stepper_disable_outputs: Invalid motor_id.")
 
         command = [PrivateConstants.STEPPER_DISABLE_OUTPUTS, motor_id]
         self._send_command(command)
@@ -1545,10 +1736,10 @@ class Telemetrix(threading.Thread):
 
         :param motor_id: 0 - 3
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_enable_outputs: Invalid motor_id.')
+            raise RuntimeError("stepper_enable_outputs: Invalid motor_id.")
 
         command = [PrivateConstants.STEPPER_ENABLE_OUTPUTS, motor_id]
         self._send_command(command)
@@ -1565,25 +1756,30 @@ class Telemetrix(threading.Thread):
 
         :param minimum_width: A 16 bit unsigned value expressed in microseconds.
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_min_pulse_width: Invalid motor_id.')
+            raise RuntimeError("stepper_set_min_pulse_width: Invalid motor_id.")
 
-        if not 0 < minimum_width <= 0xff:
+        if not 0 < minimum_width <= 0xFF:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_min_pulse_width: Pulse width range = '
-                               '0-0xffff.')
+            raise RuntimeError(
+                "stepper_set_min_pulse_width: Pulse width range = " "0-0xffff."
+            )
 
         width_msb = minimum_width >> 8
-        width_lsb = minimum_width & 0xff
+        width_lsb = minimum_width & 0xFF
 
-        command = [PrivateConstants.STEPPER_SET_MINIMUM_PULSE_WIDTH, motor_id, width_msb,
-                   width_lsb]
+        command = [
+            PrivateConstants.STEPPER_SET_MINIMUM_PULSE_WIDTH,
+            motor_id,
+            width_msb,
+            width_lsb,
+        ]
         self._send_command(command)
 
-    def stepper_set_enable_pin(self, motor_id, pin=0xff):
+    def stepper_set_enable_pin(self, motor_id, pin=0xFF):
         """
         Sets the enable pin number for stepper drivers.
         0xFF indicates unused (default).
@@ -1595,22 +1791,24 @@ class Telemetrix(threading.Thread):
         :param motor_id: 0 - 4
         :param pin: 0-0xff
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_enable_pin: Invalid motor_id.')
+            raise RuntimeError("stepper_set_enable_pin: Invalid motor_id.")
 
-        if not 0 < pin <= 0xff:
+        if not 0 < pin <= 0xFF:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_enable_pin: Pulse width range = '
-                               '0-0xff.')
+            raise RuntimeError(
+                "stepper_set_enable_pin: Pulse width range = " "0-0xff."
+            )
         command = [PrivateConstants.STEPPER_SET_ENABLE_PIN, motor_id, pin]
 
         self._send_command(command)
 
-    def stepper_set_3_pins_inverted(self, motor_id, direction=False, step=False,
-                                    enable=False):
+    def stepper_set_3_pins_inverted(
+        self, motor_id, direction=False, step=False, enable=False
+    ):
         """
         Sets the inversion for stepper driver pins.
 
@@ -1622,18 +1820,30 @@ class Telemetrix(threading.Thread):
 
         :param enable: True=inverted or False
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_3_pins_inverted: Invalid motor_id.')
+            raise RuntimeError("stepper_set_3_pins_inverted: Invalid motor_id.")
 
-        command = [PrivateConstants.STEPPER_SET_3_PINS_INVERTED, motor_id, direction,
-                   step, enable]
+        command = [
+            PrivateConstants.STEPPER_SET_3_PINS_INVERTED,
+            motor_id,
+            direction,
+            step,
+            enable,
+        ]
 
         self._send_command(command)
 
-    def stepper_set_4_pins_inverted(self, motor_id, pin1_invert=False, pin2_invert=False,
-                                    pin3_invert=False, pin4_invert=False, enable=False):
+    def stepper_set_4_pins_inverted(
+        self,
+        motor_id,
+        pin1_invert=False,
+        pin2_invert=False,
+        pin3_invert=False,
+        pin4_invert=False,
+        enable=False,
+    ):
         """
         Sets the inversion for 2, 3 and 4 wire stepper pins
 
@@ -1649,13 +1859,20 @@ class Telemetrix(threading.Thread):
 
         :param enable: True=inverted or False
         """
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_set_4_pins_inverted: Invalid motor_id.')
+            raise RuntimeError("stepper_set_4_pins_inverted: Invalid motor_id.")
 
-        command = [PrivateConstants.STEPPER_SET_4_PINS_INVERTED, motor_id, pin1_invert,
-                   pin2_invert, pin3_invert, pin4_invert, enable]
+        command = [
+            PrivateConstants.STEPPER_SET_4_PINS_INVERTED,
+            motor_id,
+            pin1_invert,
+            pin2_invert,
+            pin3_invert,
+            pin4_invert,
+            enable,
+        ]
 
         self._send_command(command)
 
@@ -1677,19 +1894,22 @@ class Telemetrix(threading.Thread):
             if self.shutdown_on_exception:
                 self.shutdown()
             raise RuntimeError(
-                'stepper_is_running: A callback function must be specified.')
+                "stepper_is_running: A callback function must be specified."
+            )
 
-        if not self.stepper_info_list[motor_id]['instance']:
+        if not self.stepper_info_list[motor_id]["instance"]:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('stepper_is_running: Invalid motor_id.')
+            raise RuntimeError("stepper_is_running: Invalid motor_id.")
 
-        self.stepper_info_list[motor_id]['is_running_callback'] = callback
+        self.stepper_info_list[motor_id]["is_running_callback"] = callback
 
         command = [PrivateConstants.STEPPER_IS_RUNNING, motor_id]
         self._send_command(command)
 
-    def _set_pin_mode(self, pin_number, pin_state, differential=0, callback=None):
+    def _set_pin_mode(
+        self, pin_number, pin_state, differential=0, callback=None
+    ):
         """
         A private method to set the various pin modes.
 
@@ -1715,29 +1935,49 @@ class Telemetrix(threading.Thread):
             elif pin_state == PrivateConstants.AT_ANALOG:
                 self.analog_callbacks[pin_number] = callback
             else:
-                print('{} {}'.format('set_pin_mode: callback ignored for '
-                                     'pin state:', pin_state))
+                print(
+                    "{} {}".format(
+                        "set_pin_mode: callback ignored for " "pin state:",
+                        pin_state,
+                    )
+                )
 
         if pin_state == PrivateConstants.AT_INPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT, 1]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_INPUT,
+                1,
+            ]
 
         elif pin_state == PrivateConstants.AT_INPUT_PULLUP:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_INPUT_PULLUP, 1]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_INPUT_PULLUP,
+                1,
+            ]
 
         elif pin_state == PrivateConstants.AT_OUTPUT:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_OUTPUT]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_OUTPUT,
+            ]
 
         elif pin_state == PrivateConstants.AT_ANALOG:
-            command = [PrivateConstants.SET_PIN_MODE, pin_number,
-                       PrivateConstants.AT_ANALOG,
-                       differential >> 8, differential & 0xff, 1]
+            command = [
+                PrivateConstants.SET_PIN_MODE,
+                pin_number,
+                PrivateConstants.AT_ANALOG,
+                differential >> 8,
+                differential & 0xFF,
+                1,
+            ]
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('Unknown pin state')
+            raise RuntimeError("Unknown pin state")
 
         if command:
             self._send_command(command)
@@ -1754,7 +1994,7 @@ class Telemetrix(threading.Thread):
         try:
             command = [PrivateConstants.STOP_ALL_REPORTS]
             self._send_command(command)
-            time.sleep(.5)
+            time.sleep(0.5)
 
             if self.ip_address:
                 try:
@@ -1773,7 +2013,9 @@ class Telemetrix(threading.Thread):
                     # ignore error on shutdown
                     pass
         except Exception:
-            raise RuntimeError('Shutdown failed - could not send stop streaming message')
+            raise RuntimeError(
+                "Shutdown failed - could not send stop streaming message"
+            )
 
     def spi_cs_control(self, chip_select_pin, select):
         """
@@ -1785,17 +2027,20 @@ class Telemetrix(threading.Thread):
         if not self.spi_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'spi_cs_control: SPI interface is not enabled.')
+            raise RuntimeError(f"spi_cs_control: SPI interface is not enabled.")
 
         if chip_select_pin not in self.cs_pins_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'spi_cs_control: chip select pin never enabled.')
+            raise RuntimeError(
+                f"spi_cs_control: chip select pin never enabled."
+            )
         command = [PrivateConstants.SPI_CS_CONTROL, chip_select_pin, select]
         self._send_command(command)
 
-    def spi_read_blocking(self, register_selection, number_of_bytes_to_read,
-                          call_back=None):
+    def spi_read_blocking(
+        self, register_selection, number_of_bytes_to_read, call_back=None
+    ):
         """
         Read the specified number of bytes from the specified SPI port and
         call the callback function with the reported data.
@@ -1818,17 +2063,24 @@ class Telemetrix(threading.Thread):
         if not self.spi_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'spi_read_blocking: SPI interface is not enabled.')
+            raise RuntimeError(
+                f"spi_read_blocking: SPI interface is not enabled."
+            )
 
         if not call_back:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('spi_read_blocking: A Callback must be specified')
+            raise RuntimeError(
+                "spi_read_blocking: A Callback must be specified"
+            )
 
         self.spi_callback = call_back
 
-        command = [PrivateConstants.SPI_READ_BLOCKING, number_of_bytes_to_read,
-                   register_selection]
+        command = [
+            PrivateConstants.SPI_READ_BLOCKING,
+            number_of_bytes_to_read,
+            register_selection,
+        ]
 
         self._send_command(command)
 
@@ -1861,10 +2113,14 @@ class Telemetrix(threading.Thread):
         if not self.spi_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'spi_set_format: SPI interface is not enabled.')
+            raise RuntimeError(f"spi_set_format: SPI interface is not enabled.")
 
-        command = [PrivateConstants.SPI_SET_FORMAT, clock_divisor, bit_order,
-                   data_mode]
+        command = [
+            PrivateConstants.SPI_SET_FORMAT,
+            clock_divisor,
+            bit_order,
+            data_mode,
+        ]
         self._send_command(command)
 
     def spi_write_blocking(self, bytes_to_write):
@@ -1879,12 +2135,16 @@ class Telemetrix(threading.Thread):
         if not self.spi_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'spi_write_blocking: SPI interface is not enabled.')
+            raise RuntimeError(
+                f"spi_write_blocking: SPI interface is not enabled."
+            )
 
         if type(bytes_to_write) is not list:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('spi_write_blocking: bytes_to_write must be a list.')
+            raise RuntimeError(
+                "spi_write_blocking: bytes_to_write must be a list."
+            )
 
         command = [PrivateConstants.SPI_WRITE_BLOCKING, len(bytes_to_write)]
 
@@ -1906,7 +2166,9 @@ class Telemetrix(threading.Thread):
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'The OneWire feature is disabled in the server.')
+            raise RuntimeError(
+                f"The OneWire feature is disabled in the server."
+            )
 
     def onewire_reset(self, callback=None):
         """
@@ -1921,11 +2183,13 @@ class Telemetrix(threading.Thread):
         if not self.onewire_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'onewire_reset: OneWire interface is not enabled.')
+            raise RuntimeError(
+                f"onewire_reset: OneWire interface is not enabled."
+            )
         if not callback:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('onewire_reset: A Callback must be specified')
+            raise RuntimeError("onewire_reset: A Callback must be specified")
 
         self.onewire_callback = callback
 
@@ -1940,19 +2204,23 @@ class Telemetrix(threading.Thread):
         if not self.onewire_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'onewire_select: OneWire interface is not enabled.')
+            raise RuntimeError(
+                f"onewire_select: OneWire interface is not enabled."
+            )
 
         if type(device_address) is not list:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('onewire_select: device address must be an array of 8 '
-                               'bytes.')
+            raise RuntimeError(
+                "onewire_select: device address must be an array of 8 " "bytes."
+            )
 
         if len(device_address) != 8:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('onewire_select: device address must be an array of 8 '
-                               'bytes.')
+            raise RuntimeError(
+                "onewire_select: device address must be an array of 8 " "bytes."
+            )
         command = [PrivateConstants.ONE_WIRE_SELECT]
         for data in device_address:
             command.append(data)
@@ -1967,7 +2235,9 @@ class Telemetrix(threading.Thread):
         if not self.onewire_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'onewire_skip: OneWire interface is not enabled.')
+            raise RuntimeError(
+                f"onewire_skip: OneWire interface is not enabled."
+            )
 
         command = [PrivateConstants.ONE_WIRE_SKIP]
         self._send_command(command)
@@ -1986,14 +2256,16 @@ class Telemetrix(threading.Thread):
         if not self.onewire_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'onewire_write: OneWire interface is not enabled.')
+            raise RuntimeError(
+                f"onewire_write: OneWire interface is not enabled."
+            )
         if 0 < data < 255:
             command = [PrivateConstants.ONE_WIRE_WRITE, data, power]
             self._send_command(command)
         else:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('onewire_write: Data must be no larger than 255')
+            raise RuntimeError("onewire_write: Data must be no larger than 255")
 
     def onewire_read(self, callback=None):
         """
@@ -2010,12 +2282,14 @@ class Telemetrix(threading.Thread):
         if not self.onewire_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'onewire_read: OneWire interface is not enabled.')
+            raise RuntimeError(
+                f"onewire_read: OneWire interface is not enabled."
+            )
 
         if not callback:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('onewire_read A Callback must be specified')
+            raise RuntimeError("onewire_read A Callback must be specified")
 
         self.onewire_callback = callback
 
@@ -2030,8 +2304,9 @@ class Telemetrix(threading.Thread):
         if not self.onewire_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'onewire_reset_search: OneWire interface is not '
-                               f'enabled.')
+            raise RuntimeError(
+                f"onewire_reset_search: OneWire interface is not " f"enabled."
+            )
         else:
             command = [PrivateConstants.ONE_WIRE_RESET_SEARCH]
             self._send_command(command)
@@ -2053,12 +2328,14 @@ class Telemetrix(threading.Thread):
         if not self.onewire_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'onewire_search: OneWire interface is not enabled.')
+            raise RuntimeError(
+                f"onewire_search: OneWire interface is not enabled."
+            )
 
         if not callback:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('onewire_read A Callback must be specified')
+            raise RuntimeError("onewire_read A Callback must be specified")
 
         self.onewire_callback = callback
 
@@ -2082,17 +2359,19 @@ class Telemetrix(threading.Thread):
         if not self.onewire_enabled:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError(f'onewire_crc8: OneWire interface is not enabled.')
+            raise RuntimeError(
+                f"onewire_crc8: OneWire interface is not enabled."
+            )
 
         if not callback:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('onewire_crc8 A Callback must be specified')
+            raise RuntimeError("onewire_crc8 A Callback must be specified")
 
         if type(address_list) is not list:
             if self.shutdown_on_exception:
                 self.shutdown()
-            raise RuntimeError('onewire_crc8: address list must be a list.')
+            raise RuntimeError("onewire_crc8: address list must be a list.")
 
         self.onewire_callback = callback
 
@@ -2105,9 +2384,9 @@ class Telemetrix(threading.Thread):
 
         self._send_command(command)
 
-    '''
+    """
     report message handlers
-    '''
+    """
 
     def _analog_message(self, data):
         """
@@ -2162,8 +2441,13 @@ class Telemetrix(threading.Thread):
             # data[0] = report sub type, data[1] = pin, data[2] = error message
             if self.dht_callbacks[data[1]]:
                 # Callback 0=DHT REPORT, DHT_ERROR, PIN, Time
-                message = [PrivateConstants.DHT_REPORT, data[0], data[1], data[2],
-                           time.time()]
+                message = [
+                    PrivateConstants.DHT_REPORT,
+                    data[0],
+                    data[1],
+                    data[2],
+                    time.time(),
+                ]
                 self.dht_callbacks[data[1]](message)
         else:
             # got valid data DHT_DATA
@@ -2173,8 +2457,15 @@ class Telemetrix(threading.Thread):
             f_temperature = float(data[7] + data[8] / 100)
             if data[4]:
                 f_temperature *= -1.0
-            message = [PrivateConstants.DHT_REPORT, data[0], data[1], data[2],
-                       f_humidity, f_temperature, time.time()]
+            message = [
+                PrivateConstants.DHT_REPORT,
+                data[0],
+                data[1],
+                data[2],
+                f_humidity,
+                f_temperature,
+                time.time(),
+            ]
 
             self.dht_callbacks[data[1]](message)
 
@@ -2222,7 +2513,9 @@ class Telemetrix(threading.Thread):
         # data[4] = register
         # data[5] ... all the data bytes
 
-        cb_list = [PrivateConstants.I2C_READ_REPORT, data[0], data[1]] + data[2:]
+        cb_list = [PrivateConstants.I2C_READ_REPORT, data[0], data[1]] + data[
+            2:
+        ]
         cb_list.append(time.time())
 
         if cb_list[1]:
@@ -2239,7 +2532,8 @@ class Telemetrix(threading.Thread):
         if self.shutdown_on_exception:
             self.shutdown()
         raise RuntimeError(
-            f'i2c too few bytes received from i2c port {data[0]} i2c address {data[1]}')
+            f"i2c too few bytes received from i2c port {data[0]} i2c address {data[1]}"
+        )
 
     def _i2c_too_many(self, data):
         """
@@ -2250,7 +2544,8 @@ class Telemetrix(threading.Thread):
         if self.shutdown_on_exception:
             self.shutdown()
         raise RuntimeError(
-            f'i2c too many bytes received from i2c port {data[0]} i2c address {data[1]}')
+            f"i2c too many bytes received from i2c port {data[0]} i2c address {data[1]}"
+        )
 
     def _i_am_here(self, data):
         """
@@ -2280,7 +2575,7 @@ class Telemetrix(threading.Thread):
         :return:
         """
         value = (data[1] << 8) + data[2]
-        print(f'DEBUG ID: {data[0]} Value: {value}')
+        print(f"DEBUG ID: {data[0]} Value: {value}")
 
     def _report_loop_data(self, data):
         """
@@ -2303,20 +2598,17 @@ class Telemetrix(threading.Thread):
         command.insert(0, len(command))
         send_message = bytes(command)
 
-        print(f"Sending message: {command}")
-        print(f"         binary: {send_message}")
-
         if self.serial_port:
             try:
                 self.serial_port.write(send_message)
             except SerialException:
                 if self.shutdown_on_exception:
                     self.shutdown()
-                raise RuntimeError('write fail in _send_command')
+                raise RuntimeError("write fail in _send_command")
         elif self.ip_address:
             self.sock.sendall(send_message)
         else:
-            raise RuntimeError('No serial port or ip address set.')
+            raise RuntimeError("No serial port or ip address set.")
 
     def _servo_unavailable(self, report):
         """
@@ -2326,7 +2618,8 @@ class Telemetrix(threading.Thread):
         if self.shutdown_on_exception:
             self.shutdown()
         raise RuntimeError(
-            f'Servo Attach For Pin {report[0]} Failed: No Available Servos')
+            f"Servo Attach For Pin {report[0]} Failed: No Available Servos"
+        )
 
     def _sonar_distance_report(self, report):
         """
@@ -2340,8 +2633,12 @@ class Telemetrix(threading.Thread):
         cb = self.sonar_callbacks[report[0]]
 
         # build report data
-        cb_list = [PrivateConstants.SONAR_DISTANCE, report[0],
-                   ((report[1] << 8) + report[2]), time.time()]
+        cb_list = [
+            PrivateConstants.SONAR_DISTANCE,
+            report[0],
+            ((report[1] << 8) + report[2]),
+            time.time(),
+        ]
 
         cb(cb_list)
 
@@ -2357,16 +2654,20 @@ class Telemetrix(threading.Thread):
         """
 
         # get callback
-        cb = self.stepper_info_list[report[0]]['distance_to_go_callback']
+        cb = self.stepper_info_list[report[0]]["distance_to_go_callback"]
 
         # isolate the steps bytes and covert list to bytes
         steps = bytes(report[1:])
 
         # get value from steps
-        num_steps = int.from_bytes(steps, byteorder='big', signed=True)
+        num_steps = int.from_bytes(steps, byteorder="big", signed=True)
 
-        cb_list = [PrivateConstants.STEPPER_DISTANCE_TO_GO, report[0], num_steps,
-                   time.time()]
+        cb_list = [
+            PrivateConstants.STEPPER_DISTANCE_TO_GO,
+            report[0],
+            num_steps,
+            time.time(),
+        ]
 
         cb(cb_list)
 
@@ -2384,16 +2685,20 @@ class Telemetrix(threading.Thread):
         """
 
         # get callback
-        cb = self.stepper_info_list[report[0]]['target_position_callback']
+        cb = self.stepper_info_list[report[0]]["target_position_callback"]
 
         # isolate the steps bytes and covert list to bytes
         target = bytes(report[1:])
 
         # get value from steps
-        target_position = int.from_bytes(target, byteorder='big', signed=True)
+        target_position = int.from_bytes(target, byteorder="big", signed=True)
 
-        cb_list = [PrivateConstants.STEPPER_TARGET_POSITION, report[0], target_position,
-                   time.time()]
+        cb_list = [
+            PrivateConstants.STEPPER_TARGET_POSITION,
+            report[0],
+            target_position,
+            time.time(),
+        ]
 
         cb(cb_list)
 
@@ -2411,16 +2716,22 @@ class Telemetrix(threading.Thread):
         """
 
         # get callback
-        cb = self.stepper_info_list[report[0]]['current_position_callback']
+        cb = self.stepper_info_list[report[0]]["current_position_callback"]
 
         # isolate the steps bytes and covert list to bytes
         position = bytes(report[1:])
 
         # get value from steps
-        current_position = int.from_bytes(position, byteorder='big', signed=True)
+        current_position = int.from_bytes(
+            position, byteorder="big", signed=True
+        )
 
-        cb_list = [PrivateConstants.STEPPER_CURRENT_POSITION, report[0], current_position,
-                   time.time()]
+        cb_list = [
+            PrivateConstants.STEPPER_CURRENT_POSITION,
+            report[0],
+            current_position,
+            time.time(),
+        ]
 
         cb(cb_list)
 
@@ -2435,9 +2746,13 @@ class Telemetrix(threading.Thread):
         """
 
         # get callback
-        cb = self.stepper_info_list[report[0]]['is_running_callback']
+        cb = self.stepper_info_list[report[0]]["is_running_callback"]
 
-        cb_list = [PrivateConstants.STEPPER_RUNNING_REPORT, report[0], time.time()]
+        cb_list = [
+            PrivateConstants.STEPPER_RUNNING_REPORT,
+            report[0],
+            time.time(),
+        ]
 
         cb(cb_list)
 
@@ -2452,10 +2767,13 @@ class Telemetrix(threading.Thread):
         """
 
         # get callback
-        cb = self.stepper_info_list[report[0]]['motion_complete_callback']
+        cb = self.stepper_info_list[report[0]]["motion_complete_callback"]
 
-        cb_list = [PrivateConstants.STEPPER_RUN_COMPLETE_REPORT, report[0],
-                   time.time()]
+        cb_list = [
+            PrivateConstants.STEPPER_RUN_COMPLETE_REPORT,
+            report[0],
+            time.time(),
+        ]
 
         cb(cb_list)
 
@@ -2511,7 +2829,8 @@ class Telemetrix(threading.Thread):
                     if self.shutdown_on_exception:
                         self.shutdown()
                     raise RuntimeError(
-                        'A report with a packet length of zero was received.')
+                        "A report with a packet length of zero was received."
+                    )
             else:
                 time.sleep(self.sleep_tune)
 
