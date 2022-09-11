@@ -79,6 +79,9 @@ class PrivateConstants:
     STEPPER_GET_TARGET_POSITION = 53
     GET_FEATURES = 54
     SERVO_WRITE_MICROSECONDS = 55
+    LIDAR_INIT = 56
+    LIDAR_DEL = 57
+    LIDAR_READ = 58
 
     # reports
     # debug data from Arduino
@@ -100,6 +103,9 @@ class PrivateConstants:
     STEPPER_RUNNING_REPORT = 18
     STEPPER_RUN_COMPLETE_REPORT = 19
     FEATURES = 20
+    LIDAR_INIT_REPORT = 21
+    LIDAR_DEL_REPORT = 22
+    LIDAR_READ_REPORT = 23
     DEBUG_PRINT = 99
 
     TELEMETRIX_VERSION = "1.10"

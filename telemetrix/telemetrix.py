@@ -15,11 +15,15 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 """
+from dataclasses import dataclass
 import socket
+import struct
 import sys
 import threading
 import time
 from collections import deque
+from collections.abc import Callable
+from typing import Any
 
 import serial
 
@@ -31,6 +35,20 @@ from serial.tools import list_ports
 
 # noinspection PyUnresolvedReferences
 from telemetrix.private_constants import PrivateConstants
+
+
+def _ord_seq_to_bytes(seq: list[int]) -> bytes:
+    return b"".join(i.to_bytes(1, byteorder="little") for i in seq)
+
+
+def _unpack_ord_seq(format: str, seq: list[int]) -> tuple:
+    return struct.unpack(format, _ord_seq_to_bytes(seq))
+
+
+@dataclass(frozen=True)
+class LidarReadResponse:
+    distance: int
+    strength: int
 
 
 # noinspection PyPep8,PyMethodMayBeStatic,GrazieInspection,PyBroadException,PyCallingNonCallable
@@ -214,6 +232,15 @@ class Telemetrix(threading.Thread):
         self.report_dispatch.update(
             {PrivateConstants.FEATURES: self._features_report}
         )
+        self.report_dispatch.update(
+            {PrivateConstants.LIDAR_INIT_REPORT: self._lidar_init_report}
+        )
+        self.report_dispatch.update(
+            {PrivateConstants.LIDAR_DEL_REPORT: self._lidar_del_report}
+        )
+        self.report_dispatch.update(
+            {PrivateConstants.LIDAR_READ_REPORT: self._lidar_read_report}
+        )
 
         # dictionaries to store the callbacks for each pin
         self.analog_callbacks = {}
@@ -229,6 +256,10 @@ class Telemetrix(threading.Thread):
         self.spi_callback = None
 
         self.onewire_callback = None
+
+        self.lidar_init_callback = None
+        self.lidar_del_callback = None
+        self.lidar_read_callback = None
 
         self.cs_pins_enabled = []
 
@@ -2383,6 +2414,39 @@ class Telemetrix(threading.Thread):
             command.append(data)
 
         self._send_command(command)
+
+    # LIDAR
+    # ------------------------------------------------------------------------
+    #
+    ### Initialize ###
+
+    def lidar_init(self, callback: Callable[[], Any]) -> None:
+        self.lidar_init_callback = callback
+        self._send_command([PrivateConstants.LIDAR_INIT])
+
+    def _lidar_init_report(self, data: list[int]) -> None:
+        self.lidar_init_callback()
+
+    ### Delete ###
+
+    def lidar_del(self, callback: Callable[[], Any]) -> None:
+        self.lidar_del_callback = callback
+        self._send_command([PrivateConstants.LIDAR_DEL])
+
+    def _lidar_del_report(self, data: list[int]) -> None:
+        self.lidar_del_callback()
+
+    ### Read ###
+
+    def lidar_read(self, callback: Callable[[int, int], Any]) -> None:
+        self.lidar_read_callback = callback
+        self._send_command([PrivateConstants.LIDAR_READ])
+
+    def _lidar_read_report(self, data: list[int]) -> None:
+        distance, strength = _unpack_ord_seq("<2H", data)
+        self.lidar_read_callback(
+            LidarReadResponse(distance=distance, strength=strength)
+        )
 
     """
     report message handlers
