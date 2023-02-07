@@ -439,7 +439,7 @@ class Telemetrix(threading.Thread):
                 continue
             try:
                 self.serial_port = serial.Serial(
-                    port.device, 115200, timeout=1, writeTimeout=0
+                    port.device, 115200, timeout=1, write_timeout=0
                 )
             except SerialException:
                 continue
@@ -483,7 +483,7 @@ class Telemetrix(threading.Thread):
         try:
             print(f"Opening {self.com_port}...")
             self.serial_port = serial.Serial(
-                self.com_port, 115200, timeout=1, writeTimeout=0
+                self.com_port, 115200, timeout=1, write_timeout=0
             )
 
             print(
