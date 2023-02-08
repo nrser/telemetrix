@@ -2028,21 +2028,23 @@ class Telemetrix(threading.Thread):
             time.sleep(0.5)
 
             if self.ip_address:
-                try:
-                    self.sock.shutdown(socket.SHUT_RDWR)
-                    self.sock.close()
-                except Exception:
-                    pass
+                if self.sock:
+                    try:
+                        self.sock.shutdown(socket.SHUT_RDWR)
+                        self.sock.close()
+                    except Exception:
+                        pass
             else:
-                try:
-                    self.serial_port.reset_input_buffer()
-                    self.serial_port.reset_output_buffer()
+                if isinstance(self.serial_port, serial.Serial):
+                    try:
+                        self.serial_port.reset_input_buffer()
+                        self.serial_port.reset_output_buffer()
 
-                    self.serial_port.close()
+                        self.serial_port.close()
 
-                except (RuntimeError, SerialException, OSError):
-                    # ignore error on shutdown
-                    pass
+                    except (RuntimeError, SerialException, OSError):
+                        # ignore error on shutdown
+                        pass
         except Exception:
             raise RuntimeError(
                 "Shutdown failed - could not send stop streaming message"
@@ -2425,6 +2427,7 @@ class Telemetrix(threading.Thread):
         self._send_command([PrivateConstants.LIDAR_INIT])
 
     def _lidar_init_report(self, data: list[int]) -> None:
+        assert self.lidar_init_callback
         self.lidar_init_callback()
 
     ### Delete ###
@@ -2434,16 +2437,18 @@ class Telemetrix(threading.Thread):
         self._send_command([PrivateConstants.LIDAR_DEL])
 
     def _lidar_del_report(self, data: list[int]) -> None:
+        assert self.lidar_del_callback
         self.lidar_del_callback()
 
     ### Read ###
 
-    def lidar_read(self, callback: Callable[[int, int], Any]) -> None:
+    def lidar_read(self, callback: Callable[[LidarReadResponse], Any]) -> None:
         self.lidar_read_callback = callback
         self._send_command([PrivateConstants.LIDAR_READ])
 
     def _lidar_read_report(self, data: list[int]) -> None:
         distance, strength = _unpack_ord_seq("<2H", data)
+        assert self.lidar_read_callback
         self.lidar_read_callback(
             LidarReadResponse(distance=distance, strength=strength)
         )
@@ -2583,8 +2588,10 @@ class Telemetrix(threading.Thread):
         cb_list.append(time.time())
 
         if cb_list[1]:
+            assert self.i2c_callback2
             self.i2c_callback2(cb_list)
         else:
+            assert self.i2c_callback
             self.i2c_callback(cb_list)
 
     def _i2c_too_few(self, data):
@@ -2624,11 +2631,13 @@ class Telemetrix(threading.Thread):
 
         cb_list.append(time.time())
 
+        assert self.spi_callback
         self.spi_callback(cb_list)
 
     def _onewire_report(self, report):
         cb_list = [PrivateConstants.ONE_WIRE_REPORT, report[0]] + report[1:]
         cb_list.append(time.time())
+        assert self.onewire_callback
         self.onewire_callback(cb_list)
 
     def _report_debug_data(self, data):
@@ -2670,7 +2679,10 @@ class Telemetrix(threading.Thread):
                     self.shutdown()
                 raise RuntimeError("write fail in _send_command")
         elif self.ip_address:
-            self.sock.sendall(send_message)
+            if self.sock:
+                self.sock.sendall(send_message)
+            else:
+                raise RuntimeError("IP address but no socket")
         else:
             raise RuntimeError("No serial port or ip address set.")
 
@@ -2882,7 +2894,7 @@ class Telemetrix(threading.Thread):
                     # print(report_type)
 
                     # retrieve the report handler from the dispatch table
-                    dispatch_entry = self.report_dispatch.get(report_type)
+                    dispatch_entry = self.report_dispatch[report_type]
 
                     # if there is additional data for the report,
                     # it will be contained in response_data
@@ -2912,8 +2924,9 @@ class Telemetrix(threading.Thread):
         while self._is_running() and not self.shutdown_flag:
             # we can get an OSError: [Errno9] Bad file descriptor when shutting down
             # just ignore it
+            assert self.serial_port
             try:
-                if self.serial_port.inWaiting():
+                if self.serial_port.in_waiting:
                     c = self.serial_port.read()
                     self.the_deque.append(ord(c))
                     # print(ord(c))
@@ -2936,6 +2949,7 @@ class Telemetrix(threading.Thread):
 
             while self._is_running() and not self.shutdown_flag:
                 try:
+                    assert self.sock
                     payload = self.sock.recv(1)
                     self.the_deque.append(ord(payload))
                 except Exception:
